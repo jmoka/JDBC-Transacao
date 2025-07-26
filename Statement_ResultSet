@@ -1,0 +1,140 @@
+## 📘 Explicação Completa: `Statement` e `ResultSet` no JDBC
+
+---
+
+### 📌 O que é o `Statement`?
+
+#### ✅ Definição:
+
+O `Statement` é uma **interface da API JDBC** que representa um **comando SQL estático** (isto é, sem parâmetros) a ser enviado para o banco de dados.
+
+> Ele é usado principalmente para executar **comandos simples** como `SELECT`, `INSERT`, `UPDATE`, e `DELETE`.
+
+#### ✅ Criação:
+
+```java
+Statement stmt = connection.createStatement();
+```
+
+#### ✅ Métodos principais:
+
+| Método                      | Descrição                                                                                                        |
+| --------------------------- | ---------------------------------------------------------------------------------------------------------------- |
+| `executeQuery(String sql)`  | Executa comandos `SELECT`. Retorna um `ResultSet`.                                                               |
+| `executeUpdate(String sql)` | Executa comandos `INSERT`, `UPDATE`, `DELETE`. Retorna um `int` com o número de linhas afetadas.                 |
+| `execute(String sql)`       | Executa comandos genéricos (pode ser qualquer SQL). Retorna `boolean` indicando se o resultado é um `ResultSet`. |
+
+---
+
+### 📌 Exemplo com `Statement`:
+
+```java
+Connection conn = DB.getConnection();
+Statement stmt = conn.createStatement();
+ResultSet rs = stmt.executeQuery("SELECT * FROM funcionario");
+```
+
+---
+
+### 📌 O que é o `ResultSet`?
+
+#### ✅ Definição:
+
+O `ResultSet` é uma **interface** que representa a **tabela de dados retornada** por uma consulta `SELECT`.
+
+> Ele funciona como um cursor que percorre os resultados linha por linha.
+
+#### ✅ Navegação:
+
+| Método              | Descrição                                                                       |
+| ------------------- | ------------------------------------------------------------------------------- |
+| `next()`            | Avança para a próxima linha. Retorna `false` quando não há mais linhas.         |
+| `previous()`        | Volta para a linha anterior. (Funciona apenas se o `ResultSet` for scrollable.) |
+| `absolute(int row)` | Vai diretamente para uma linha específica.                                      |
+| `beforeFirst()`     | Posiciona o cursor antes da primeira linha.                                     |
+| `afterLast()`       | Posiciona o cursor depois da última linha.                                      |
+
+#### ✅ Leitura de dados:
+
+Você pode recuperar os dados por **índice da coluna** (baseado em 1) ou **nome da coluna**:
+
+```java
+int id = rs.getInt("id");
+String nome = rs.getString("nome");
+double salario = rs.getDouble(4); // supondo que a coluna 4 é salário
+```
+
+#### ✅ Métodos comuns de leitura:
+
+| Método                      | Tipo de dado            |
+| --------------------------- | ----------------------- |
+| `getInt(String coluna)`     | Inteiros (`int`)        |
+| `getString(String coluna)`  | Texto (`String`)        |
+| `getDouble(String coluna)`  | Decimais (`double`)     |
+| `getBoolean(String coluna)` | Booleano (`true/false`) |
+| `getDate(String coluna)`    | Data (`java.sql.Date`)  |
+
+---
+
+### 🧠 Funcionamento passo a passo
+
+1. **Criação da conexão com o banco**
+2. **Criação do `Statement`**
+3. **Execução do SQL com `executeQuery()`**
+4. **Uso do `ResultSet` para percorrer os resultados**
+5. **Fechamento de todos os recursos**
+
+---
+
+### ✅ Exemplo completo com explicações linha a linha:
+
+```java
+Connection conn = DB.getConnection();         // Conecta ao banco
+Statement stmt = conn.createStatement();      // Cria um Statement simples
+String sql = "SELECT nome, cargo FROM funcionario"; 
+ResultSet rs = stmt.executeQuery(sql);        // Executa a consulta e armazena os resultados
+
+while (rs.next()) {                           // Percorre os resultados
+    String nome = rs.getString("nome");       // Lê o campo "nome"
+    String cargo = rs.getString("cargo");     // Lê o campo "cargo"
+    System.out.println(nome + " - " + cargo); // Imprime o resultado
+}
+
+rs.close();                                   // Fecha o ResultSet
+stmt.close();                                 // Fecha o Statement
+conn.close();                                 // Fecha a conexão
+```
+
+---
+
+### ⚠️ Cuidados e Limitações
+
+| Situação           | Risco ou Limitação                                                                                          |
+| ------------------ | ----------------------------------------------------------------------------------------------------------- |
+| Injeção de SQL     | `Statement` **não** protege contra SQL Injection. Use `PreparedStatement` para isso.                        |
+| Manutenção difícil | Queries concatenadas com `+` são difíceis de manter.                                                        |
+| Performance        | `PreparedStatement` é mais eficiente para consultas repetidas.                                              |
+| Navegação limitada | `ResultSet` comum só permite **avanço para frente** (`next()`), a menos que configurado de forma diferente. |
+
+---
+
+### 🧽 Boas Práticas
+
+1. **Sempre feche** o `ResultSet`, `Statement` e `Connection` no `finally` ou com `try-with-resources`.
+2. Prefira `PreparedStatement` para queries com **parâmetros dinâmicos** (ex: por ID).
+3. Use `getXXX()` correspondente ao tipo do campo no banco para evitar conversões indesejadas.
+4. Mantenha a lógica de consulta separada (DAO - Data Access Object).
+
+---
+
+### 🧪 Exercício sugerido
+
+Modifique a seguinte consulta:
+
+```sql
+SELECT * FROM funcionario WHERE salario > 5000
+```
+
+E implemente em Java usando `Statement` + `ResultSet`, mostrando somente os nomes e salários de quem ganha mais de R\$ 5000.
+
+

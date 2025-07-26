@@ -1,0 +1,192 @@
+## 🧠 Aula: Recuperação de Dados em Banco de Dados com Java (Usando `Statement` e `ResultSet`)
+
+---
+
+### 🎯 Objetivo da Aula
+
+Ensinar como recuperar dados de um banco de dados utilizando **Java JDBC**, com foco nos objetos **`Statement`** e **`ResultSet`**, entendendo seu funcionamento, aplicabilidade, e boas práticas.
+
+---
+
+### 📚 Pré-requisitos
+
+* Java JDK instalado
+* MySQL ou outro SGBD configurado
+* Biblioteca JDBC (geralmente já incluída no JDK)
+* Editor de código (VS Code, IntelliJ ou Eclipse)
+* Banco de dados com tabela criada
+
+---
+
+### 🏗️ Estrutura do Projeto
+
+```
+/JDBC-DatabaseQuery
+├── db/
+│   └── DB.java
+├── application/
+│   └── Program.java
+└── data.sql
+```
+
+---
+
+### 🧩 Parte 1 – Criando o Banco e a Tabela
+
+```sql
+-- data.sql
+CREATE DATABASE empresa;
+
+USE empresa;
+
+CREATE TABLE funcionario (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    nome VARCHAR(100),
+    cargo VARCHAR(50),
+    salario DECIMAL(10,2)
+);
+
+INSERT INTO funcionario (nome, cargo, salario) VALUES
+('João Silva', 'Analista', 4500.00),
+('Maria Santos', 'Gerente', 8500.00),
+('Carlos Lima', 'Técnico', 3000.00);
+```
+
+---
+
+### ⚙️ Parte 2 – Conexão com o Banco (`DB.java`)
+
+```java
+package db;
+
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.SQLException;
+
+public class DB {
+    private static final String URL = "jdbc:mysql://localhost:3306/empresa";
+    private static final String USER = "root";
+    private static final String PASSWORD = "sua_senha";
+
+    public static Connection getConnection() {
+        try {
+            return DriverManager.getConnection(URL, USER, PASSWORD);
+        } catch (SQLException e) {
+            throw new RuntimeException("Erro ao conectar ao banco: " + e.getMessage());
+        }
+    }
+}
+```
+
+---
+
+### 📥 Parte 3 – Consulta com `Statement` e `ResultSet` (`Program.java`)
+
+```java
+package application;
+
+import db.DB;
+
+import java.sql.Connection;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Statement;
+
+public class Program {
+    public static void main(String[] args) {
+        Connection conn = null;
+        Statement stmt = null;
+        ResultSet rs = null;
+
+        try {
+            conn = DB.getConnection();
+
+            // Criação do Statement
+            stmt = conn.createStatement();
+
+            // Executando a consulta
+            String sql = "SELECT * FROM funcionario";
+            rs = stmt.executeQuery(sql);
+
+            // Iterando sobre os resultados
+            while (rs.next()) {
+                int id = rs.getInt("id");
+                String nome = rs.getString("nome");
+                String cargo = rs.getString("cargo");
+                double salario = rs.getDouble("salario");
+
+                System.out.printf("ID: %d, Nome: %s, Cargo: %s, Salário: %.2f%n",
+                                  id, nome, cargo, salario);
+            }
+
+        } catch (SQLException e) {
+            System.out.println("Erro: " + e.getMessage());
+        } finally {
+            try {
+                if (rs != null) rs.close();
+                if (stmt != null) stmt.close();
+                if (conn != null) conn.close();
+            } catch (SQLException e) {
+                System.out.println("Erro ao fechar recursos: " + e.getMessage());
+            }
+        }
+    }
+}
+```
+
+---
+
+### 🛠️ Explicações
+
+#### 🔹 `Statement`
+
+* Interface que executa comandos SQL estáticos.
+* Usa `createStatement()` para instanciar.
+* Usa `executeQuery()` para SELECT e `executeUpdate()` para INSERT/UPDATE/DELETE.
+
+#### 🔹 `ResultSet`
+
+* Interface que representa os dados retornados por uma consulta SQL.
+* `rs.next()` avança para a próxima linha.
+* Métodos como `getString`, `getInt`, `getDouble` acessam os dados por nome ou índice da coluna.
+
+---
+
+### 🧼 Boas Práticas
+
+| Prática                                                  | Explicação                                      |
+| -------------------------------------------------------- | ----------------------------------------------- |
+| Usar `try-catch-finally`                                 | Garante fechamento de conexões e recursos.      |
+| Preferir `PreparedStatement` para queries com parâmetros | Evita SQL Injection (veremos em aulas futuras). |
+| Tratar exceções de forma clara                           | Facilita debugging e manutenção.                |
+| Encapsular acesso ao banco                               | Melhora a organização (ex: criar classe DAO).   |
+
+---
+
+### 💡 Exercício Proposto
+
+1. Crie uma nova tabela chamada `departamento` com os campos `id`, `nome`, `sigla`.
+2. Popule com 3 registros.
+3. Crie um novo programa que recupere os departamentos e mostre no console usando `Statement` e `ResultSet`.
+
+---
+
+### ✅ Resultado Esperado
+
+```bash
+ID: 1, Nome: João Silva, Cargo: Analista, Salário: 4500.00
+ID: 2, Nome: Maria Santos, Cargo: Gerente, Salário: 8500.00
+ID: 3, Nome: Carlos Lima, Cargo: Técnico, Salário: 3000.00
+```
+
+---
+
+### 🎓 Conclusão
+
+Nesta aula você aprendeu a:
+
+* Conectar ao banco de dados com JDBC
+* Executar comandos SQL usando `Statement`
+* Ler os dados com `ResultSet`
+* Aplicar boas práticas no acesso a banco
+

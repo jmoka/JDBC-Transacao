@@ -1,0 +1,96 @@
+Claro! Vamos focar **somente** no `PreparedStatement`: o que é, como se instancia, como funciona e por que usar.
+
+---
+
+## 🔍 O que é `PreparedStatement`?
+
+`PreparedStatement` é uma **interface** do pacote `java.sql` usada para **executar comandos SQL parametrizados** em um banco de dados. Diferente do `Statement`, que executa uma string SQL direta, o `PreparedStatement` permite **definir parâmetros** (representados por `?`) e depois atribuir valores a esses parâmetros com segurança.
+
+---
+
+## 🧠 Por que usar `PreparedStatement`?
+
+### ✅ Vantagens principais:
+
+| Vantagem         | Descrição                                              |
+| ---------------- | ------------------------------------------------------ |
+| **Segurança**    | Evita ataques de SQL Injection                         |
+| **Performance**  | O banco de dados pode pré-compilar o comando           |
+| **Clareza**      | Código mais limpo com parâmetros separados             |
+| **Reutilização** | Pode ser executado várias vezes com valores diferentes |
+
+---
+
+## 🛠️ Como instanciar um `PreparedStatement`?
+
+### 📌 Sintaxe:
+
+```java
+PreparedStatement stmt = conexao.prepareStatement("SQL_COM_PARAMETROS");
+```
+
+* `conexao`: é um objeto `Connection` já conectado ao banco.
+* `"SQL_COM_PARAMETROS"`: é o comando SQL com **placeholders `?`** para os valores que serão inseridos.
+
+---
+
+### 🧪 Exemplo prático:
+
+```java
+Connection conn = DriverManager.getConnection("jdbc:mysql://localhost:3306/meu_banco", "usuario", "senha");
+
+String sql = "INSERT INTO usuarios (nome, email, idade) VALUES (?, ?, ?)";
+PreparedStatement stmt = conn.prepareStatement(sql);
+
+// Substituir os "?" com valores reais
+stmt.setString(1, "Maria");
+stmt.setString(2, "maria@email.com");
+stmt.setInt(3, 28);
+
+// Executa a inserção
+stmt.executeUpdate();
+```
+
+---
+
+## 🧩 Como funciona internamente?
+
+1. **Preparação do SQL com parâmetros** (`?`)
+
+   * Exemplo: `INSERT INTO usuarios (nome, email) VALUES (?, ?)`
+2. **Compilação pelo banco de dados**
+
+   * O banco já entende a estrutura da consulta e otimiza.
+3. **Atribuição dos valores reais**
+
+   * `stmt.setString(1, "João");` → O primeiro `?` recebe `"João"`
+4. **Execução**
+
+   * `stmt.executeUpdate();` → Executa a consulta já preparada com os valores definidos.
+5. **Fechamento**
+
+   * `stmt.close();`
+
+---
+
+## 🧠 Métodos mais usados do `PreparedStatement`
+
+| Método                             | Descrição                                            |
+| ---------------------------------- | ---------------------------------------------------- |
+| `setString(int pos, String valor)` | Define um valor de texto                             |
+| `setInt(int pos, int valor)`       | Define um valor inteiro                              |
+| `setDouble(int pos, double valor)` | Define um valor decimal                              |
+| `executeUpdate()`                  | Executa comandos de escrita (INSERT, UPDATE, DELETE) |
+| `executeQuery()`                   | Executa consultas (SELECT)                           |
+| `close()`                          | Fecha o statement                                    |
+
+---
+
+## 🧪 Resumo
+
+* `PreparedStatement` é uma forma **segura** e **eficiente** de executar SQL em Java.
+* Os `?` são **placeholders** para os valores que serão definidos depois.
+* O comando SQL é **compilado uma vez** e pode ser executado várias vezes com diferentes dados.
+* Evita SQL Injection, facilita o código e melhora o desempenho.
+
+Se quiser, posso mostrar como usar `PreparedStatement` com `SELECT`, ou como usá-lo com laços para inserir múltiplos registros. Deseja um desses exemplos?

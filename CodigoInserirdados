@@ -1,0 +1,186 @@
+Claro! A seguir, uma **aula completa sobre inserção de dados com JDBC em Java**, com foco especial no uso do `PreparedStatement`.
+
+---
+
+# 🎓 Aula: Inserindo Dados com JDBC em Java – Usando `PreparedStatement`
+
+## 🎯 Objetivo
+
+Aprender a **inserir dados em um banco de dados MySQL usando JDBC**, com ênfase no uso do `PreparedStatement` para segurança, performance e boas práticas.
+
+---
+
+## 🧠 Conceitos Básicos
+
+### O que é JDBC?
+
+JDBC (Java Database Connectivity) é uma API da linguagem Java que permite **conectar e interagir com bancos de dados relacionais**, como MySQL, PostgreSQL, Oracle etc.
+
+### O que é o `PreparedStatement`?
+
+`PreparedStatement` é uma **interface do JDBC** usada para executar instruções SQL com parâmetros. Ela previne **SQL Injection**, melhora a **performance** e facilita o **reaproveitamento de código**.
+
+---
+
+## 📦 Pré-requisitos
+
+* Java instalado
+* MySQL instalado
+* Biblioteca do conector JDBC (`mysql-connector-j`) adicionada ao classpath
+* Um banco de dados e uma tabela criada:
+
+```sql
+CREATE DATABASE curso_java;
+USE curso_java;
+
+CREATE TABLE usuarios (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    nome VARCHAR(100),
+    email VARCHAR(100),
+    idade INT
+);
+```
+
+---
+
+## 🛠️ Estrutura do Projeto
+
+```
+/src
+  └── db/
+      ├── DB.java
+  └── application/
+      ├── InsercaoUsuario.java
+```
+
+---
+
+## 🧩 Parte 1 – Classe de Conexão (`DB.java`)
+
+```java
+package db;
+
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.SQLException;
+
+public class DB {
+    private static final String URL = "jdbc:mysql://localhost:3306/curso_java";
+    private static final String USER = "root";
+    private static final String PASSWORD = "sua_senha";
+
+    public static Connection getConnection() {
+        try {
+            return DriverManager.getConnection(URL, USER, PASSWORD);
+        } catch (SQLException e) {
+            throw new RuntimeException("Erro na conexão com o banco de dados: " + e.getMessage());
+        }
+    }
+}
+```
+
+---
+
+## 🧩 Parte 2 – Inserindo Dados com `PreparedStatement`
+
+```java
+package application;
+
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.SQLException;
+import db.DB;
+
+public class InsercaoUsuario {
+    public static void main(String[] args) {
+        Connection conn = null;
+        PreparedStatement stmt = null;
+
+        try {
+            // 1. Obter conexão
+            conn = DB.getConnection();
+
+            // 2. Comando SQL com parâmetros (placeholders ?)
+            String sql = "INSERT INTO usuarios (nome, email, idade) VALUES (?, ?, ?)";
+
+            // 3. Criar o PreparedStatement
+            stmt = conn.prepareStatement(sql);
+
+            // 4. Preencher os parâmetros
+            stmt.setString(1, "João Silva");    // ?1
+            stmt.setString(2, "joao@email.com"); // ?2
+            stmt.setInt(3, 30);                 // ?3
+
+            // 5. Executar a inserção
+            int linhasAfetadas = stmt.executeUpdate();
+            System.out.println("Linhas inseridas: " + linhasAfetadas);
+
+        } catch (SQLException e) {
+            System.err.println("Erro ao inserir: " + e.getMessage());
+        } finally {
+            try {
+                if (stmt != null) stmt.close();
+                if (conn != null) conn.close();
+            } catch (SQLException e) {
+                System.err.println("Erro ao fechar conexões: " + e.getMessage());
+            }
+        }
+    }
+}
+```
+
+---
+
+## 🧠 Explicando em Detalhes o `PreparedStatement`
+
+### ✅ Vantagens do `PreparedStatement`
+
+| Vantagem        | Explicação                                                       |
+| --------------- | ---------------------------------------------------------------- |
+| **Segurança**   | Evita ataques de SQL Injection ao separar comandos SQL dos dados |
+| **Performance** | O SQL é compilado apenas uma vez e pode ser reutilizado          |
+| **Clareza**     | O código fica mais limpo e organizado com parâmetros             |
+
+### 🧪 Exemplo de SQL Injection prevenido
+
+Imagine este código com `Statement` comum:
+
+```java
+String sql = "INSERT INTO usuarios (nome) VALUES ('" + nome + "')";
+```
+
+Se o usuário digitar: `"João'); DROP TABLE usuarios; --"`
+Você pode perder sua tabela!
+
+Com `PreparedStatement`, o valor é tratado como **dado**, e não como **comando**.
+
+---
+
+## ✅ Boas Práticas
+
+* Sempre use `PreparedStatement` para comandos com entrada do usuário.
+* Feche conexões, statements e result sets no `finally` (ou use `try-with-resources`).
+* Use mensagens de erro claras e logue exceções em ambientes reais.
+
+---
+
+## 🚀 Desafio
+
+Adapte o código para:
+
+1. Solicitar os dados do usuário via `Scanner` (entrada do teclado).
+2. Inserir múltiplos usuários em sequência.
+3. Usar `try-with-resources`.
+
+---
+
+## 📚 Conclusão
+
+Nesta aula, você aprendeu:
+
+* O que é JDBC e como conectar ao MySQL
+* O que é `PreparedStatement` e suas vantagens
+* Como inserir dados com segurança e eficiência
+* Boas práticas para manipular banco de dados em Java
+
+Se quiser, posso complementar com uma versão que usa `Scanner` para inserir dados dinamicamente ou mostrar como usar `try-with-resources`. Deseja isso também?

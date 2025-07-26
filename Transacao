@@ -1,0 +1,234 @@
+Claro! A seguir está uma **aula completa sobre Transações em Java**, com foco em aplicações que utilizam JDBC e banco de dados relacional, explicando os conceitos fundamentais, a importância das transações, como implementá-las com controle manual e automático, além de exemplos práticos.
+
+---
+
+# 🎓 Aula: **Transações em Java com JDBC**
+
+---
+
+## 📌 Objetivo da Aula
+
+Ao final desta aula, você será capaz de:
+
+* Entender o que é uma transação no contexto de banco de dados;
+* Aplicar transações manuais com `Connection` do JDBC;
+* Utilizar `commit`, `rollback` e `setAutoCommit`;
+* Compreender a importância das transações em operações críticas (como saques e depósitos bancários);
+* Implementar controle de transações em Java com exemplos reais.
+
+---
+
+## 📚 Conceito: O que é uma Transação?
+
+Uma transação é um conjunto de operações que devem ser executadas **todas com sucesso ou nenhuma delas**. Ou seja, elas seguem o princípio **ACID**:
+
+| Letra | Significado  |
+| ----- | ------------ |
+| A     | Atomicidade  |
+| C     | Consistência |
+| I     | Isolamento   |
+| D     | Durabilidade |
+
+> Exemplo: Transferência bancária: subtrair de uma conta e adicionar em outra. Ambas as ações devem acontecer, ou nenhuma delas.
+
+---
+
+## 🛠️ Configuração Prévia
+
+Antes de começar, você deve:
+
+* Ter um banco de dados MySQL ou outro compatível rodando;
+* Ter um driver JDBC configurado;
+* Ter uma tabela no banco, por exemplo:
+
+```sql
+CREATE TABLE contas (
+  id INT PRIMARY KEY,
+  nome VARCHAR(100),
+  saldo DECIMAL(10, 2)
+);
+
+INSERT INTO contas VALUES (1, 'João', 1000.00);
+INSERT INTO contas VALUES (2, 'Maria', 500.00);
+```
+
+---
+
+## 🔗 Conexão com o Banco
+
+```java
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.SQLException;
+
+public class DB {
+    public static Connection getConnection() throws SQLException {
+        String url = "jdbc:mysql://localhost:3306/seu_banco";
+        String user = "root";
+        String password = "sua_senha";
+
+        return DriverManager.getConnection(url, user, password);
+    }
+}
+```
+
+---
+
+## 🎯 Exemplo 1: Transação Simples de Transferência
+
+```java
+import java.sql.*;
+
+public class TransferenciaBancaria {
+
+    public static void transferir(int de, int para, double valor) {
+        Connection conn = null;
+
+        try {
+            conn = DB.getConnection();
+
+            // Desativa o autocommit
+            conn.setAutoCommit(false);
+
+            // 1. Subtrai da conta origem
+            PreparedStatement stmt1 = conn.prepareStatement("UPDATE contas SET saldo = saldo - ? WHERE id = ?");
+            stmt1.setDouble(1, valor);
+            stmt1.setInt(2, de);
+            stmt1.executeUpdate();
+
+            // 2. Adiciona na conta destino
+            PreparedStatement stmt2 = conn.prepareStatement("UPDATE contas SET saldo = saldo + ? WHERE id = ?");
+            stmt2.setDouble(1, valor);
+            stmt2.setInt(2, para);
+            stmt2.executeUpdate();
+
+            // Commit se tudo deu certo
+            conn.commit();
+            System.out.println("Transferência realizada com sucesso!");
+
+        } catch (SQLException e) {
+            try {
+                if (conn != null) {
+                    conn.rollback(); // Reverte se houve erro
+                    System.out.println("Erro na transação. Rollback executado.");
+                }
+            } catch (SQLException ex) {
+                System.out.println("Erro no rollback: " + ex.getMessage());
+            }
+        } finally {
+            try {
+                if (conn != null) {
+                    conn.setAutoCommit(true); // Volta ao padrão
+                    conn.close();
+                }
+            } catch (SQLException e) {
+                System.out.println("Erro ao fechar conexão: " + e.getMessage());
+            }
+        }
+    }
+
+    public static void main(String[] args) {
+        transferir(1, 2, 300.00);
+    }
+}
+```
+
+---
+
+## 📌 Explicação do Código
+
+| Linha                       | Explicação                                        |
+| --------------------------- | ------------------------------------------------- |
+| `conn.setAutoCommit(false)` | Inicia a transação manualmente                    |
+| `stmt1.executeUpdate()`     | Executa a subtração do saldo                      |
+| `stmt2.executeUpdate()`     | Executa o acréscimo do saldo                      |
+| `conn.commit()`             | Confirma a transação                              |
+| `conn.rollback()`           | Reverte todas as operações anteriores (caso erro) |
+| `conn.setAutoCommit(true)`  | Restaura o modo automático                        |
+
+---
+
+## 🚨 Importante
+
+* Se você **não usar `commit()`**, nada será salvo no banco;
+* Sempre use `rollback()` em `catch` para garantir consistência;
+* A ordem dos comandos é **fundamental**;
+* Preferencialmente use `try-with-resources` em produções reais.
+
+---
+
+## ✅ Exemplo com try-with-resources (Java 7+)
+
+```java
+try (Connection conn = DB.getConnection()) {
+    conn.setAutoCommit(false);
+
+    try (PreparedStatement stmt1 = conn.prepareStatement("..."); 
+         PreparedStatement stmt2 = conn.prepareStatement("...")) {
+
+        // Executa comandos...
+
+        conn.commit();
+    } catch (SQLException e) {
+        conn.rollback();
+    }
+}
+```
+
+---
+
+## 🧪 Testes e Comportamento
+
+* Tente lançar uma exceção proposital entre as duas operações para simular falha.
+
+```java
+if (true) throw new SQLException("Falha simulada");
+```
+
+* Observe como o `rollback` impede alterações parciais no banco.
+
+---
+
+## 🚀 Avançado: Isolamento de Transações
+
+Você pode definir o nível de isolamento com:
+
+```java
+conn.setTransactionIsolation(Connection.TRANSACTION_SERIALIZABLE);
+```
+
+Níveis disponíveis:
+
+| Constante                      | Descrição                                   |
+| ------------------------------ | ------------------------------------------- |
+| `TRANSACTION_READ_UNCOMMITTED` | Pode ler dados não confirmados (dirty read) |
+| `TRANSACTION_READ_COMMITTED`   | Lê somente dados confirmados                |
+| `TRANSACTION_REPEATABLE_READ`  | Mesmos dados em múltiplas leituras          |
+| `TRANSACTION_SERIALIZABLE`     | Isolamento total                            |
+
+---
+
+## 📘 Exercício Proposto
+
+**Crie um sistema de saque e depósito com as seguintes regras:**
+
+* Um saque só é realizado se houver saldo suficiente;
+* Ambos os comandos devem estar dentro da mesma transação;
+* Se houver falha, exibir mensagem e reverter a operação.
+
+---
+
+## 🧠 Conclusão
+
+Transações são fundamentais para a integridade de dados em aplicações Java. Aprendê-las é essencial para sistemas bancários, contábeis, e-commerce, entre outros.
+
+---
+
+## 📎 Recursos Extras
+
+* [Documentação oficial JDBC](https://docs.oracle.com/javase/tutorial/jdbc/basics/transactions.html)
+* [Transações e ACID no MySQL](https://dev.mysql.com/doc/refman/8.0/en/commit.html)
+
+---
+
+Se quiser, posso transformar essa aula em um **componente interativo em Vue.js com Vuetify** ou uma **apresentação HTML**, com botões para simular transações. Deseja isso?
